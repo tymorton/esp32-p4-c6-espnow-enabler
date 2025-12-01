@@ -140,6 +140,10 @@ host_slave_version_not_compatible = true;  // Force OTA
 - **Transport**: SDIO (10MHz "Safe Mode", 4-bit)
 - **Features**: ESP-Hosted slave + ESP-NOW enabled
 - **Target**: ESP32-C6
+- **✅ Universal Compatibility**: Works on Waveshare, Elecrow, and other P4 boards.
+- **✅ Safe Mode**: Uses 10MHz SDIO clock for maximum stability.
+- **✅ Smart Flasher**: Auto-detects port, backs up your existing firmware, and restores it after the update.
+- **✅ Official Firmware**: Installs Espressif's standard `v2.6.7` firmware.
 
 ### Universal Compatibility
 To ensure this works on all boards (Waveshare, Elecrow, etc.), we made two key changes:
