@@ -23,7 +23,7 @@ esp32-p4-c6-espnow-enabler/
 │   ├── main_modified.c                # OTA host with version check bypass
 │   └── host_performs_slave_ota.bin   # Pre-built OTA flasher
 ├── docs/
-│   ├── modified_version_header.h      # Version 99.99.99 header
+│   ├── modified_ota_host/         # OTA host binary (forces update)
 │   └── TROUBLESHOOTING.md            # Common issues and solutions
 └── flash_c6_firmware.sh              # One-command flash script
 ```

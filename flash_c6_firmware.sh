@@ -22,6 +22,7 @@ echo -e "${GREEN}=== ESP32-P4 C6 ESP-NOW Firmware Flasher ===${NC}"
 echo ""
 echo "Port: $PORT"
 echo "Firmware: network_adapter.bin (1.1MB, ESP-NOW enabled)"
+echo "Installing Firmware Version: 2.6.7 (Official)"
 echo ""
 
 # Check if firmware exists
