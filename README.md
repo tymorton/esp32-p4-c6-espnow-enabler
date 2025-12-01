@@ -26,6 +26,7 @@ esp32-p4-c6-espnow-enabler/
 │   ├── modified_ota_host/         # OTA host binary (forces update)
 │   └── TROUBLESHOOTING.md            # Common issues and solutions
 └── flash_c6_firmware.sh              # One-command flash script
+└── update_firmware.py                # Firmware version manager (requires ESP-IDF)
 ```
 
 ## 📱 Supported Hardware
@@ -144,6 +145,7 @@ host_slave_version_not_compatible = true;  // Force OTA
 - **✅ Safe Mode**: Uses 10MHz SDIO clock for maximum stability.
 - **✅ Smart Flasher**: Auto-detects port, backs up your existing firmware, and restores it after the update.
 - **✅ Official Firmware**: Installs Espressif's standard `v2.6.7` firmware.
+- **✅ Update Manager**: Includes `update_firmware.py` to fetch and install newer versions (requires ESP-IDF).
 
 ### Universal Compatibility
 To ensure this works on all boards (Waveshare, Elecrow, etc.), we made two key changes:
