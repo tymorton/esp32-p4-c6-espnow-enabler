@@ -40,13 +40,13 @@ echo -e "${YELLOW}Step 1/4: Preparing...${NC}"
 cd "$SCRIPT_DIR"
 
 echo -e "${YELLOW}Step 2/4: Flashing storage partition (0x410000)...${NC}"
-python -m esptool --chip esp32p4 -p "$PORT" -b 460800 --before default_reset --after hard_reset write_flash 0x410000 build/storage.bin
+python -m esptool --chip esp32p4 -p "$PORT" -b 460800 --before default_reset --after hard_reset write_flash 0x410000 binaries/storage.bin
 
 echo -e "${YELLOW}Step 3/4: Flashing OTA host firmware...${NC}"
 python -m esptool --chip esp32p4 -p "$PORT" -b 460800 --before default_reset --after hard_reset write_flash \
-    0x2000 build/bootloader/bootloader.bin \
-    0x8000 build/partition_table/partition-table.bin \
-    0xd000 build/ota_data_initial.bin \
+    0x2000 binaries/bootloader.bin \
+    0x8000 binaries/partition-table.bin \
+    0xd000 binaries/ota_data_initial.bin \
     0x10000 modified_ota_host/host_performs_slave_ota.bin
 
 echo ""

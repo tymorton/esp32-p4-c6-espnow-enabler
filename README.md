@@ -28,6 +28,17 @@ esp32-p4-c6-espnow-enabler/
 └── flash_c6_firmware.sh              # One-command flash script
 ```
 
+## 📱 Supported Hardware
+
+This utility is a **Universal Enabler** tested and verified on:
+
+| Board | Status | Notes |
+|-------|--------|-------|
+| **[Waveshare ESP32-P4-WIFI6-Touch-LCD-4C](https://www.waveshare.com/esp32-p4-wifi6-touch-lcd-4c.htm)** | ✅ Verified | 4" Round Display |
+| **[Elecrow CrowPanel ESP32-P4 7.0" HMI](https://www.elecrow.com/esp32-display-7-inch-hmi-display-rgb-tft-lcd-touch-screen-support-lvgl.html)** | ✅ Verified | 7" Rectangular Display |
+
+*Note: This likely works on ANY ESP32-P4 board with an onboard ESP32-C6 connected via SDIO.*
+
 ## 🚀 Quick Start (3 Steps)
 
 ### Prerequisites
@@ -126,9 +137,14 @@ host_slave_version_not_compatible = true;  // Force OTA
 ### Firmware Details
 - **Version**: 2.6.7 (Official)
 - **Size**: 1.1MB
-- **Transport**: SDIO (40MHz, 4-bit)
+- **Transport**: SDIO (10MHz "Safe Mode", 4-bit)
 - **Features**: ESP-Hosted slave + ESP-NOW enabled
 - **Target**: ESP32-C6
+
+### Universal Compatibility
+To ensure this works on all boards (Waveshare, Elecrow, etc.), we made two key changes:
+1.  **10MHz SDIO Clock**: Lowered from 40MHz to 10MHz to ensure robust signal integrity on all PCB layouts.
+2.  **Patched File Discovery**: Modified the OTA host to be more lenient when searching for firmware files on LittleFS, fixing "No .bin files found" errors on some devices.
 
 ## 🐛 Troubleshooting
 
