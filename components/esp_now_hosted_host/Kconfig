@@ -1,0 +1,32 @@
+menu "ESP-NOW over esp_hosted (host)"
+
+    config ESP_NOW_HOSTED_HOST_TIMEOUT_MS
+        int "Request timeout (ms)"
+        range 50 10000
+        default 2000
+        help
+            Max wait for the co-processor's reply to one esp_now_* call. Normal round trip
+            is ~1 ms; the margin covers Wi-Fi/BLE contention on the co-processor.
+
+    config ESP_NOW_HOSTED_HOST_QUEUE_LEN
+        int "Receive/send-status event queue length"
+        range 4 128
+        default 16
+        help
+            Events beyond this are dropped and counted (esp_now_hosted_host_get_stats).
+
+    config ESP_NOW_HOSTED_HOST_TASK_STACK
+        int "Callback dispatch task stack (bytes)"
+        default 4096
+
+    config ESP_NOW_HOSTED_HOST_TASK_PRIO
+        int "Callback dispatch task priority"
+        range 1 24
+        default 10
+
+    config ESP_NOW_HOSTED_HOST_TASK_CORE
+        int "Callback dispatch task core (-1 = any)"
+        range -1 1
+        default -1
+
+endmenu

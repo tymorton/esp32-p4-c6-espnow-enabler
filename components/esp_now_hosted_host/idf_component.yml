@@ -1,0 +1,8 @@
+version: "0.1.0"
+description: Native esp_now_* API for radio-less ESP32-P4 hosts via an esp_hosted co-processor (ESPHome ESP-NOW overlay wire protocol)
+license: Apache-2.0
+targets: [esp32p4]
+dependencies:
+  idf: ">=5.4"
+  espressif/esp_hosted: ">=2.8.1"      # CustomRpc (peer data transfer) channel
+  espressif/esp_wifi_remote: ">=0.14"

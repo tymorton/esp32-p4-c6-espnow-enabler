@@ -21,8 +21,8 @@ fi
 echo -e "${GREEN}=== ESP32-P4 C6 ESP-NOW Firmware Flasher ===${NC}"
 echo ""
 echo "Port: $PORT"
-echo "Firmware: network_adapter.bin (1.1MB, ESP-NOW enabled)"
-echo "Installing Firmware Version: 2.6.7 (Official)"
+echo "Firmware: network_adapter.bin (1.2MB, ESP-NOW CustomRpc enabled)"
+echo "Installing Firmware Version: 2.12.13 (ESP-NOW CustomRpc enabled)"
 echo ""
 
 # Check if firmware exists
@@ -32,8 +32,8 @@ if [ ! -f "$SCRIPT_DIR/slave_firmware/network_adapter.bin" ]; then
 fi
 
 # Check if esptool is available
-if ! command -v esptool.py &> /dev/null; then
-    echo -e "${RED}Error: esptool.py not found. Please install ESP-IDF.${NC}"
+if ! command -v esptool.py &> /dev/null && ! python3 -m esptool version &> /dev/null; then
+    echo -e "${RED}Error: esptool not found. Please install ESP-IDF or pip install esptool.${NC}"
     exit 1
 fi
 
@@ -79,7 +79,7 @@ echo ""
 echo "Expected output:"
 echo "  - FORCING Slave OTA update"
 echo "  - Using LittleFS OTA method"
-echo "  - Slave firmware version: 2.6.7"
+echo "  - Slave firmware version: 2.12.13"
 echo ""
 echo -e "${GREEN}ESP-NOW is now enabled on your ESP32-C6!${NC}"
 

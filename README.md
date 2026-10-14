@@ -1,211 +1,206 @@
 # ESP32-P4 C6 ESP-NOW Enabler
 
-**Enable ESP-NOW on ESP32-P4 boards (Elecrow, Waveshare) by updating the ESP32-C6 coprocessor firmware via SDIO OTA.**
-
-## 🎯 Overview
-
-ESP32-P4 boards with ESP32-C6 WiFi coprocessors ship with factory firmware that doesn't include ESP-NOW support. This package provides everything needed to update the C6 firmware to enable ESP-NOW, allowing multiple P4 boards to communicate wirelessly.
-
-### Supported Boards
-- ✅ **Elecrow ESP32-P4 7" Display**
-- ✅ **Waveshare ESP32-P4-WIFI6-Touch-LCD-4C** (4" Round)
-- ✅ **Waveshare ESP32-P4-WIFI6-Touch-LCD-7B**
-- ✅ Any ESP32-P4 board with ESP32-C6 coprocessor via SDIO
-
-## 📦 What's Included
-
-```
-esp32-p4-c6-espnow-enabler/
-├── README.md                          # This file
-├── slave_firmware/
-│   └── network_adapter.bin            # ESP-NOW-enabled C6 firmware (1.1MB)
-├── modified_ota_host/
-│   ├── main_modified.c                # OTA host with version check bypass
-│   └── host_performs_slave_ota.bin   # Pre-built OTA flasher
-├── docs/
-│   ├── modified_ota_host/         # OTA host binary (forces update)
-│   └── TROUBLESHOOTING.md            # Common issues and solutions
-└── flash_c6_firmware.sh              # One-command flash script
-└── update_firmware.py                # Firmware version manager (requires ESP-IDF)
-```
-
-## 📱 Supported Hardware
-
-This utility is a **Universal Enabler** tested and verified on:
-
-| Board | Status | Notes |
-|-------|--------|-------|
-| **[Waveshare ESP32-P4-WIFI6-Touch-LCD-4C](https://www.waveshare.com/esp32-p4-wifi6-touch-lcd-4c.htm)** | ✅ Verified | 4" Round Display |
-| **[Elecrow CrowPanel ESP32-P4 7.0" HMI](https://www.elecrow.com/esp32-display-7-inch-hmi-display-rgb-tft-lcd-touch-screen-support-lvgl.html)** | ✅ Verified | 7" Rectangular Display |
-
-*Note: This likely works on ANY ESP32-P4 board with an onboard ESP32-C6 connected via SDIO.*
-
-## 🚀 Quick Start (3 Steps)
-
-### Prerequisites
-- ESP-IDF v5.4 or later
-- esptool.py installed
-- ESP32-P4 board connected via USB
-
-### Method 1: Automated Script (Recommended)
-
-```bash
-cd esp32-p4-c6-espnow-enabler
-chmod +x flash_c6_firmware.sh
-./flash_c6_firmware.sh /dev/cu.wchusbserialXXXX
-```
-
-### Method 2: Manual Flash
-
-#### Step 1: Clone ESP-Hosted OTA Example
-```bash
-git clone --depth 1 https://github.com/espressif/esp-hosted-mcu.git
-cd esp-hosted-mcu/examples/host_performs_slave_ota
-```
-
-#### Step 2: Configure for LittleFS OTA
-```bash
-# Copy our ESP-NOW firmware
-cp path/to/esp32-p4-c6-espnow-enabler/slave_firmware/network_adapter.bin components/ota_littlefs/slave_fw_bin/
-
-# Apply version check bypass
-cp path/to/esp32-p4-c6-espnow-enabler/modified_ota_host/main_modified.c main/main.c
-
-# Configure for LittleFS method
-echo "CONFIG_OTA_METHOD_LITTLEFS=y" >> sdkconfig.defaults
-echo "CONFIG_OTA_METHOD_PARTITION=n" >> sdkconfig.defaults
-```
-
-#### Step 3: Build and Flash
-```bash
-idf.py set-target esp32p4
-idf.py build
-idf.py -p /dev/cu.wchusbserialXXXX flash monitor
-```
-
-## 📋 Verification
-
-After flashing, you should see:
-```
-I (2442) host_performs_slave_ota: Slave firmware version: 2.6.7
-W (2464) host_performs_slave_ota: FORCING Slave OTA update (version check bypassed)
-I (2471) host_performs_slave_ota: Using LittleFS OTA method
-```
-
-### Test ESP-NOW is Working
-
-Use this simple test in your P4 application:
-
-```c
-#include "esp_now.h"
-
-void test_espnow(void) {
-    esp_err_t ret = esp_now_init();
-    if (ret == ESP_OK) {
-        ESP_LOGI("TEST", "✅ ESP-NOW is working!");
-    } else {
-        ESP_LOGE("TEST", "❌ ESP-NOW failed: %s", esp_err_to_name(ret));
-    }
-}
-```
-
-## 🔧 Technical Details
-
-### Why This is Needed
-
-1. **Factory C6 Firmware** doesn't include ESP-NOW support
-2. **RPC Timeout Issue**: Standard OTA version check fails (RPC 0x15e timeout)
-3. **Version Check Bypass**: Our modified OTA forces the update regardless
-
-### What We Changed
-
-#### 1. C6 Firmware Version
-Used official version 2.6.7 (unchanged) to ensure future update compatibility.
-```c
-#define PROJECT_VERSION_MAJOR_1 2
-#define PROJECT_VERSION_MINOR_1 6
-#define PROJECT_VERSION_PATCH_1 7
-```
-
-#### 2. OTA Host Logic
-Modified `main.c` to bypass version check:
-```c
-// FORCE OTA UPDATE - bypass version check due to RPC timeout
-ESP_LOGW(TAG, "FORCING Slave OTA update (version check bypassed)");
-host_slave_version_not_compatible = true;  // Force OTA
-```
-
-### Firmware Details
-- **Version**: 2.6.7 (Official)
-- **Size**: 1.1MB
-- **Transport**: SDIO (10MHz "Safe Mode", 4-bit)
-- **Features**: ESP-Hosted slave + ESP-NOW enabled
-- **Target**: ESP32-C6
-- **✅ Universal Compatibility**: Works on Waveshare, Elecrow, and other P4 boards.
-- **✅ Safe Mode**: Uses 10MHz SDIO clock for maximum stability.
-- **✅ Smart Flasher**: Auto-detects port, backs up your existing firmware, and restores it after the update.
-- **✅ Official Firmware**: Installs Espressif's standard `v2.6.7` firmware.
-- **✅ Update Manager**: Includes `update_firmware.py` to fetch and install newer versions (requires ESP-IDF).
-
-### Universal Compatibility
-To ensure this works on all boards (Waveshare, Elecrow, etc.), we made two key changes:
-1.  **10MHz SDIO Clock**: Lowered from 40MHz to 10MHz to ensure robust signal integrity on all PCB layouts.
-2.  **Patched File Discovery**: Modified the OTA host to be more lenient when searching for firmware files on LittleFS, fixing "No .bin files found" errors on some devices.
-
-## 🐛 Troubleshooting
-
-### "Slave OTA not required"
-**Solution**: Use our modified `main_modified.c` which bypasses the version check.
-
-### "No .bin files found in /littlefs"
-**Solution**: Ensure `network_adapter.bin` is in `components/ota_littlefs/slave_fw_bin/` before building.
-
-### "Port is busy"
-```bash
-lsof | grep /dev/cu.wchusbserial | awk '{print $2}' | xargs kill -9
-```
-
-### RPC Timeout (0x15e)
-**Normal**: Factory C6 firmware doesn't support version query RPC. Our bypass handles this.
-
-## 📚 Background
-
-This solution was developed through extensive testing on both Elecrow and Waveshare ESP32-P4 boards. We discovered:
-
-1. Factory C6 firmware lacks ESP-NOW
-2. ESP-Hosted OTA works but has strict version checks
-3. RPC timeouts prevent standard OTA procedures
-4. Forcing the OTA bypasses these limitations
-
-## 🤝 Contributing
-
-This package was created to help the ESP32-P4 community. If you:
-- Test on other boards
-- Find improvements
-- Have questions
-
-Please share your findings!
-
-## 📄 License
-
-Based on ESP-Hosted framework (Apache 2.0). Modifications documented for community use.
-
-## ⚠️ Important Notes
-
-- **One-time process**: Once C6 has ESP-NOW firmware, it persists across P4 reflashes
-- **Reversible**: Flash factory C6 firmware if needed (contact manufacturer)
-- **Safe**: SDIO OTA is the official method for C6 updates
-
-## 🎉 Success Criteria
-
-You'll know it worked when:
-1. ✅ C6 reports version 2.6.7
-2. ✅ `esp_now_init()` returns `ESP_OK`
-3. ✅ No "ESP-NOW not supported" errors
-4. ✅ Can send/receive ESP-NOW packets
+**Enable bidirectional ESP-NOW communication on ESP32-P4 boards (Waveshare, Elecrow, etc.) with onboard ESP32-C6 Wi-Fi 6 coprocessors via SDIO CustomRpc.**
 
 ---
 
-**Created**: December 2024  
-**Tested On**: ESP-IDF v5.4, Waveshare 4C, Elecrow 7"  
-**Status**: Verified Working ✅
+## 🎯 The Root Cause: Why Stock P4 Boards Cannot Run ESP-NOW
+
+If you have tried using ESP-NOW on an ESP32-P4 with an ESP32-C6 coprocessor, you likely encountered one or both of these roadblocks:
+
+1. **Host Linker Error (`undefined reference to esp_now_init`)**:  
+   Espressif's `esp_wifi_remote` component injects the header `<esp_now.h>` on the P4, but ships **no implementation (`.c` file)** at link time ([tracking issue espressif/esp-hosted-mcu#19](https://github.com/espressif/esp-hosted-mcu/issues/19)).
+2. **Coprocessor Lacks RPC Handlers**:  
+   Stock factory C6 firmware from Espressif has **no CustomRpc handler** for ESP-NOW. Even if you stub the host symbols, no packets cross the SDIO bus.
+
+### The Solution Provided Here
+
+This repository provides the complete, tested end-to-end fix:
+- **Coprocessor Firmware (`slave_firmware/network_adapter.bin`)**: ESP-Hosted v2.12.13 compiled with the `esp_now_hosted` CustomRpc overlay (RPC ID 388 / `0x6E6F7701`).
+- **Drop-In Host Component (`components/esp_now_hosted_host`)**: A clean C component (Apache-2.0) with an asynchronous event dispatch task that provides the full `<esp_now.h>` API on the P4, routing all calls over SDIO CustomRpc to the C6 coprocessor without blocking or deadlocking callbacks.
+- **Automated Flasher (`flash_c6_firmware.sh`)**: Updates the onboard C6 over SDIO without requiring external JTAG or UART wiring.
+
+---
+
+## ⚠️ Version Compatibility & Requirements (Crucial)
+
+Before building or flashing, please note the version pairing rules:
+
+### 1. Host and Co-Processor Major Versions Must Match
+`esp_hosted` uses an internal RPC protocol across SDIO. A **v2.x host** can only communicate with a **v2.x co-processor**, and a **v3.x host** can only communicate with a **v3.x co-processor**. Mixing major versions breaks the SDIO transport handshake immediately.
+
+### 2. Why We Pin to `2.12.x` (and NOT `3.0.x`)
+Espressif maintains two active branches of `esp_hosted`:
+- **`2.12.x` (LTS / Stable Production)**: The official standard for MCU-to-MCU hosted mode.
+- **`3.0.x` (Experimental Redesign)**: New transport protocol.
+
+In ESP-IDF v5.4 and v5.5, Espressif's own `esp_wifi_remote` component (which provides the Wi-Fi stack for the ESP32-P4) **explicitly restricts** `esp_hosted` for P4 targets:
+```yaml
+# From Espressif's esp_wifi_remote component manifest:
+rules:
+  - if: target in [esp32h2, esp32p4]
+    version: ">=2.11,<3.0"
+```
+Because Espressif blocks `3.0.x` on the P4 host, **the C6 co-processor must also run the matching `2.12.x` release**. Upgrading the C6 to a 3.0.x binary will cause `Req_CustomRpc` timeouts `[0x184]`.
+
+### 3. Tested & Verified Compatibility Matrix
+
+| Component | Tested Version | Status / Notes |
+| :--- | :--- | :--- |
+| **ESP-IDF** | `v5.4.x`, `v5.5.5` | Recommended modern toolchain (GCC 14.2.0) |
+| **Host `esp_hosted`** | `2.12.12` | Specified in `main/idf_component.yml` |
+| **Host `esp_wifi_remote`** | `1.6.3` | Standard remote Wi-Fi layer |
+| **C6 Co-Processor Firmware**| `2.12.13` | Provided in `slave_firmware/network_adapter.bin` |
+| **Host ESP-NOW Component** | `esp_now_hosted_host` | Included in `components/esp_now_hosted_host` |
+| **LVGL (Optional Display)** | `v9.6.0` | 60 FPS on 10.1" / 7" MIPI-DSI displays |
+
+---
+
+## 📱 Supported Hardware
+
+Verified and tested bidirectional communication on:
+- ✅ **Waveshare ESP32-P4-WIFI6-Touch-LCD-10.1** (10.1" MIPI-DSI)
+- ✅ **Waveshare ESP32-P4-WIFI6-Touch-LCD-7B** (7" Display)
+- ✅ **Waveshare ESP32-P4-WIFI6-Touch-LCD-4C** (4" Round Display)
+- ✅ **Waveshare ESP32-P4-Module-DEV-KIT**
+- ✅ **Waveshare ESP32-P4-NANO**
+- ✅ **Elecrow CrowPanel ESP32-P4 7.0" HMI**
+- ✅ Any ESP32-P4 board with an ESP32-C6 connected via SDIO.
+
+---
+
+## 🚀 Quick Start (3 Steps)
+
+### Step 1: Flash ESP-NOW Firmware to the ESP32-C6 Coprocessor
+
+Connect your ESP32-P4 board via USB and run:
+
+```bash
+git clone https://github.com/tymorton/esp32-p4-c6-espnow-enabler.git
+cd esp32-p4-c6-espnow-enabler
+chmod +x flash_c6_firmware.sh
+./flash_c6_firmware.sh /dev/cu.usbmodemXXXX   # (Linux: /dev/ttyACM0 or /dev/ttyUSB0)
+```
+
+The script will:
+1. Back up your existing P4 app (optional).
+2. Flash the SDIO OTA updater to your P4.
+3. Automatically stream the ESP-NOW enabled C6 firmware (`network_adapter.bin`) across SDIO into the C6.
+4. Prompt you to restore your application.
+
+---
+
+### Step 2: Add the `esp_now_hosted_host` Component to Your P4 Project
+
+Copy the drop-in host component into your project's `components` directory:
+
+```bash
+cp -r esp32-p4-c6-espnow-enabler/components/esp_now_hosted_host /path/to/your/p4_project/components/
+```
+
+In your main `CMakeLists.txt` or component `CMakeLists.txt`, add `esp_now_hosted_host` to `REQUIRES`:
+
+```cmake
+idf_component_register(
+    SRCS "main.c"
+    INCLUDE_DIRS "."
+    REQUIRES esp_hosted esp_wifi_remote esp_now_hosted_host esp_wifi esp_netif
+)
+```
+
+*(Optional)* You can also use `esp_now_hosted_host_cp_update(c6_bin, len)` directly in your C application on boot to update the C6 co-processor over SDIO without running any shell script!
+
+---
+
+### Step 3: Initialize Wi-Fi & ESP-NOW in Your Code
+
+> [!IMPORTANT]
+> **Prerequisite:** On ESP32 systems, Wi-Fi **must** be initialized and started (`esp_wifi_init()` and `esp_wifi_start()`) before calling `esp_now_init()`.
+
+```c
+#include "esp_log.h"
+#include "esp_netif.h"
+#include "esp_hosted.h"
+#include "esp_wifi.h"
+#include "esp_now.h"
+
+static const char *TAG = "p4_espnow";
+static const uint8_t TARGET_PEER_MAC[6] = {0x10, 0x20, 0xBA, 0x7A, 0x99, 0xB8};
+
+static void on_espnow_recv(const esp_now_recv_info_t *info, const uint8_t *data, int len)
+{
+    ESP_LOGI(TAG, "RECV from %02X:%02X:%02X:%02X:%02X:%02X | len=%d",
+             info->src_addr[0], info->src_addr[1], info->src_addr[2],
+             info->src_addr[3], info->src_addr[4], info->src_addr[5], len);
+}
+
+static void on_espnow_send(const esp_now_send_info_t *info, esp_now_send_status_t status)
+{
+    ESP_LOGI(TAG, "SEND status: %s", status == ESP_NOW_SEND_SUCCESS ? "SUCCESS" : "FAIL");
+}
+
+void app_main(void)
+{
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+
+    // 1. Connect P4 to C6 coprocessor over SDIO
+    ESP_ERROR_CHECK(esp_hosted_connect_to_slave());
+    ESP_LOGI(TAG, "Connected to C6 over SDIO!");
+
+    // 2. Initialize Wi-Fi stack via esp_wifi_remote
+    ESP_ERROR_CHECK(esp_netif_init());
+    esp_netif_create_default_wifi_sta();
+
+    wifi_init_config_t wcfg = WIFI_INIT_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_wifi_init(&wcfg));
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+    ESP_ERROR_CHECK(esp_wifi_start());
+    ESP_ERROR_CHECK(esp_wifi_set_channel(1, WIFI_SECOND_CHAN_NONE));
+    ESP_LOGI(TAG, "Wi-Fi started on Channel 1");
+
+    // 3. Initialize ESP-NOW
+    ESP_ERROR_CHECK(esp_now_init());
+    ESP_LOGI(TAG, "✅ ESP-NOW initialized on P4 via C6 CustomRpc!");
+
+    // 4. Register Callbacks
+    esp_now_register_recv_cb(on_espnow_recv);
+    esp_now_register_send_cb(on_espnow_send);
+
+    // 5. Add Peer (Unicast or Broadcast)
+    esp_now_peer_info_t peer = {
+        .channel = 1,
+        .ifidx = WIFI_IF_STA,
+        .encrypt = false,
+    };
+    memcpy(peer.peer_addr, TARGET_PEER_MAC, 6);
+    ESP_ERROR_CHECK(esp_now_add_peer(&peer));
+
+    // 6. Transmit Data
+    uint8_t payload[4] = {0x01, 0x02, 0x03, 0x04};
+    esp_now_send(TARGET_PEER_MAC, payload, sizeof(payload));
+}
+```
+
+---
+
+## 🔧 Frequently Asked Questions & Troubleshooting
+
+### Q1: `undefined reference to esp_now_init` when compiling on P4
+**Cause**: `esp_wifi_remote` only provides `<esp_now.h>` declarations without definitions.  
+**Fix**: Add the `components/esp_now_hosted_host` folder from this repo into your project's `components/` directory.
+
+### Q2: `Req_CustomRpc` timeout `[0x184]` on boot
+**Cause**: The C6 coprocessor is still running factory firmware or mismatched version without the CustomRpc handler.  
+**Fix**: Run `./flash_c6_firmware.sh` to install the `network_adapter.bin` v2.12.13 firmware onto the C6.
+
+### Q3: `esp_now_init` fails or packets aren't received
+**Cause**: Wi-Fi was not started before calling `esp_now_init()`.  
+**Fix**: Ensure `esp_wifi_init(&wcfg)`, `esp_wifi_set_mode(WIFI_MODE_STA)`, and `esp_wifi_start()` are executed before `esp_now_init()`. Both devices must also be configured to the same Wi-Fi channel (`esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE)`).
+
+---
+
+## 📄 License & Credits
+
+- Underlying ESP-Hosted framework: Apache 2.0 (Espressif Systems).
+- CustomRpc ESP-NOW bridge overlay: Apache 2.0 (ESPHome & contributors).
+- Packaged, tested, and maintained for the ESP32-P4 developer community.
