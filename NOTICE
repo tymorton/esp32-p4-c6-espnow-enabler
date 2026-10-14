@@ -1,0 +1,17 @@
+ESP32-P4 C6 ESP-NOW Enabler
+Copyright 2025-2026 Ty Morton and Contributors
+
+This product includes software developed by:
+- Espressif Systems (Shanghai) Co., Ltd. (https://www.espressif.com)
+  Licensed under the Apache License, Version 2.0.
+  Includes components from esp_hosted (v2.12.13).
+
+- ESPHome (https://esphome.io / https://github.com/esphome/esp-hosted-firmware)
+  Licensed under the Apache License, Version 2.0.
+  Co-processor ESP-NOW CustomRpc overlay based on commit e4c39e0.
+
+Co-processor Binary Verification:
+- File: slave_firmware/network_adapter.bin
+- Target: ESP32-C6 (SDIO slave)
+- Base Version: Espressif esp_hosted v2.12.13
+- SHA-256: 09e4ed4ff648444ad045c1d934825af407648f58898586ce9f4275e53fdb23f6
