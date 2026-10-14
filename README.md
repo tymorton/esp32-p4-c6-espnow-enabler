@@ -72,12 +72,26 @@ You can update the C6 co-processor either **directly from your P4 application** 
 
 ### Option A: Direct In-App Co-Processor Update (Recommended)
 
-No external scripts or partition overwrites required! Embed `slave_firmware/network_adapter.bin` into your project and use the host helper to verify and flash the C6 automatically on boot:
+No external scripts or partition overwrites required! Copy `slave_firmware/network_adapter.bin` into your project's `main/` directory and add it to `main/CMakeLists.txt`:
+
+```cmake
+idf_component_register(
+    SRCS "main.c"
+    INCLUDE_DIRS "."
+    REQUIRES esp_hosted esp_wifi_remote esp_now_hosted_host esp_wifi esp_netif nvs_flash
+    EMBED_FILES "network_adapter.bin"
+)
+```
+
+In your `app_main`, execute the check right after `esp_hosted_connect_to_slave()` and **before** Wi-Fi initialization:
 
 ```c
 #include "esp_now_hosted_host.h"
 
-// If the C6 is running factory firmware without ESP-NOW support:
+// 1. Connect to C6 co-processor
+ESP_ERROR_CHECK(esp_hosted_connect_to_slave());
+
+// 2. Check if co-processor has ESP-NOW overlay. If not, self-update and restart:
 if (!esp_now_hosted_host_cp_supported()) {
     extern const uint8_t c6_bin_start[] asm("_binary_network_adapter_bin_start");
     extern const uint8_t c6_bin_end[]   asm("_binary_network_adapter_bin_end");
@@ -89,12 +103,15 @@ if (!esp_now_hosted_host_cp_supported()) {
 }
 ```
 
+> [!NOTE]
+> Option A has been verified on boards running existing co-processor firmware (e.g. v2.6.7+). Very old factory co-processor firmware from early production batches may hang on RPC queries and require Option B for the initial upgrade.
+
 ---
 
 ### Option B: Standalone Flasher Script (Fallback)
 
 > [!WARNING]
-> This standalone script flashes a temporary OTA host flasher image which overwrites the P4 bootloader and partition table. Back up your full flash beforehand if you have existing NVS or partition data.
+> This standalone script temporarily flashes a dedicated OTA host image that overwrites the P4 bootloader and partition table. Back up your full flash beforehand if you have existing partition data or NVS keys. The OTA tool also forces a C6 rewrite on every boot until you restore your application.
 
 Connect your ESP32-P4 board via USB and run:
 
@@ -129,7 +146,7 @@ idf_component_register(
 
 #### 2. Complete Working Code Example
 
-*(See [`examples/ping_pong/`](examples/ping_pong/) for a fully configured, build-ready project)*
+*(See [`examples/ping_pong/`](examples/ping_pong/) for the P4 project, and [`examples/ping_pong_peer/`](examples/ping_pong_peer/) for an ESP32/S3/C3/C6 responder peer)*
 
 ```c
 #include <stdio.h>
@@ -203,6 +220,7 @@ void app_main(void)
 
     // 7. Transmit Data
     uint8_t payload[4] = {0x01, 0x02, 0x03, 0x04};
+    esp_now_send(TARGET_PEER_MAC, payload, sizeof(payload));
 }
 ```
 

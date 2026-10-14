@@ -26,6 +26,17 @@ static void on_espnow_recv(const esp_now_recv_info_t *info, const uint8_t *data,
 
     // If we received a PING, respond with PONG
     if (len >= 4 && memcmp(data, "PING", 4) == 0) {
+        // ESP-NOW requires peer registration before unicast transmission
+        if (!esp_now_is_peer_exist(info->src_addr)) {
+            esp_now_peer_info_t peer = {
+                .channel = 1,
+                .ifidx = WIFI_IF_STA,
+                .encrypt = false,
+            };
+            memcpy(peer.peer_addr, info->src_addr, ESP_NOW_ETH_ALEN);
+            esp_now_add_peer(&peer);
+        }
+
         // Safe to call esp_now_send inside callback thanks to async dispatch task!
         const char *pong_reply = "PONG";
         esp_now_send(info->src_addr, (const uint8_t *)pong_reply, strlen(pong_reply));

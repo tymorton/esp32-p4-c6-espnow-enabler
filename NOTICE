@@ -8,7 +8,8 @@ This product includes software developed by:
 
 - ESPHome (https://esphome.io / https://github.com/esphome/esp-hosted-firmware)
   Licensed under the Apache License, Version 2.0.
-  Co-processor ESP-NOW CustomRpc overlay based on commit e4c39e0.
+  Co-processor ESP-NOW CustomRpc overlay release: https://esphome.github.io/esp-hosted-firmware/
+  (manifest esp32c6.json, version 2.12.13).
 
 Co-processor Binary Verification:
 - File: slave_firmware/network_adapter.bin
